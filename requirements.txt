@@ -1,3 +1,4 @@
-altair
+tabula
 pandas
 streamlit
+numpy
