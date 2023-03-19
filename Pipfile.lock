@@ -362,7 +362,7 @@
                 "sha256:f76d097d12c82a535fda9dfe5e8dd4127952b45fea9b0276cb30cca5ea313fbc"
             ],
             "index": "pypi",
-            "version": "==1.5.3"
+            "version": "==1.3.5"
         },
         "pillow": {
             "hashes": [
