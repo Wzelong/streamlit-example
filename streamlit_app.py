@@ -1,38 +1,65 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import tabula
+import io
+import numpy as np
 
-"""
-# Welcome to Streamlit!
-
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
-
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
-
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+st.set_page_config(layout="centered",
+                   page_title="RCV PDF Extractor", page_icon="📄")
 
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
+def extract_data_from_pdf(file):
+    tables = tabula.read_pdf(file, pages="all")
+    tables[0].columns = tables[0].iloc[1]
+    tables[0] = tables[0][2:]
+    return tables
 
-    Point = namedtuple('Point', 'x y')
-    data = []
 
-    points_per_turn = total_points / num_turns
+def extract_product_description_and_basis_of_design_manufacturer(tables):
+    for table in tables:
+        if "PRODUCT DESCRIPTION" in table.columns and "BASIS OF DESIGN MANUFACTURER" in table.columns:
+            product_description = table["PRODUCT DESCRIPTION"].fillna(
+                "N/A").tolist()
+            basis_of_design_manufacturer = table["BASIS OF DESIGN MANUFACTURER"].fillna(
+                "N/A").tolist()
 
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
+            # Create a DataFrame with the extracted columns
+            data = pd.DataFrame({"PRODUCT DESCRIPTION": product_description,
+                                "BASIS OF DESIGN MANUFACTURER": basis_of_design_manufacturer})
+            return data
 
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+    return None
+
+
+st.title("RCV PDF Extractor")
+
+uploaded_file = st.file_uploader("Upload a PDF file", type=['pdf'])
+
+if uploaded_file is not None:
+    with st.spinner("Extracting data from the PDF..."):
+        pdf_data = io.BytesIO(uploaded_file.read())
+        tables = extract_data_from_pdf(pdf_data)
+        data = extract_product_description_and_basis_of_design_manufacturer(
+            tables)
+
+    if data is not None:
+        # Generate random prices ranging from 20 to 200, with the same length as the extracted data
+        random_prices = np.random.randint(20, 201, len(data))
+
+        # Add the generated prices as the third column
+        data["Price(US Dollar)"] = random_prices
+
+        st.subheader("Extracted Data:")
+        st.write(data)
+
+        # Display the download button
+        data = data.replace({r'\n': ' '}, regex=True)
+        csv_file = data.to_csv(sep=",", index=False,
+                               line_terminator='\n', encoding='utf-8')
+        st.download_button("Download as CSV", csv_file,
+                           file_name="data.csv", mime="text/csv")
+    else:
+        st.error(
+            "Could not extract PRODUCT DESCRIPTION and BASIS OF DESIGN MANUFACTURER from the PDF.")
+else:
+    st.info("Please upload a PDF file.")
