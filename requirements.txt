@@ -1,4 +1,7 @@
-tabula
-pandas
 streamlit
+pandas
+tabula
 numpy
+serpapi
+spacy
+pdfx

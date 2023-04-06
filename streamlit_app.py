@@ -8,27 +8,62 @@ st.set_page_config(layout="centered",
                    page_title="RCV PDF Extractor", page_icon="📄")
 
 
-def extract_data_from_pdf(file):
-    tables = tabula.read_pdf(file, pages="all")
-    tables[0].columns = tables[0].iloc[1]
-    tables[0] = tables[0][2:]
-    return tables
+def pdf(file):
+    import os
+    from serpapi import GoogleSearch
+    import pandas as pd
+    import spacy
+    import pdfx
 
+    word_list = ["led", "wall", "floor",
+                 "sign", "pendant", "light", "steplight"]
+    ADP_list = ["in", "on", "at"]
 
-def extract_product_description_and_basis_of_design_manufacturer(tables):
-    for table in tables:
-        if "PRODUCT DESCRIPTION" in table.columns and "BASIS OF DESIGN MANUFACTURER" in table.columns:
-            product_description = table["PRODUCT DESCRIPTION"].fillna(
-                "N/A").tolist()
-            basis_of_design_manufacturer = table["BASIS OF DESIGN MANUFACTURER"].fillna(
-                "N/A").tolist()
+    pdf = pdfx.PDFx(os.path.join(os.getcwd(), 'test.pdf'))
+    text = pdf.get_text()
+    print(type(text))
 
-            # Create a DataFrame with the extracted columns
-            data = pd.DataFrame({"PRODUCT DESCRIPTION": product_description,
-                                "BASIS OF DESIGN MANUFACTURER": basis_of_design_manufacturer})
-            return data
+    nlp = spacy.load("en_core_web_sm")
+    text_block = text.split("\n\n")
+    block_list = []
+    for textblock in text_block:
+        doc = nlp(textblock)
+        cols = ("text", "lemma", "POS", "explain", "stopword")
+        rows = []
+        keep = False
+        legit = False
+        for t in doc:
+            if t.text.lower() in word_list:
+                keep = True
+            if t.text.lower() in ADP_list:
+                legit = True
+        if keep and legit:
+            block_list.append(doc.text)
 
-    return None
+    for i in range(len(block_list)):
+        print("item " + str(i+1) + ": ")
+        print(block_list[i])
+        print()
+
+    search_list = []
+    for i in block_list:
+        wordlist = i.split("\n")
+        to_search = ""
+        for j in wordlist:
+            to_search = to_search + j + " "
+        search_list.append(to_search.strip())
+
+    price_list = []
+    price_holder = 0
+    for i in search_list:
+        price_list.append(price_holder)
+        price_holder += 1
+
+    return_dict = {}
+    for i in range(len(search_list)):
+        return_dict[search_list[i]] = price_list[i]
+
+    return return_dict
 
 
 st.title("RCV PDF Extractor")
@@ -36,28 +71,18 @@ st.title("RCV PDF Extractor")
 uploaded_file = st.file_uploader("Upload a PDF file", type=['pdf'])
 
 if uploaded_file is not None:
-    with st.spinner("Extracting data from the PDF..."):
-        pdf_data = io.BytesIO(uploaded_file.read())
-        tables = extract_data_from_pdf(pdf_data)
-        data = extract_product_description_and_basis_of_design_manufacturer(
-            tables)
+    data = pdf(uploaded_file)
+    df = pd.DataFrame(list(data.items()), columns=['Product', 'Price'])
 
     if data is not None:
-        # Generate random prices ranging from 20 to 200, with the same length as the extracted data
-        random_prices = np.random.randint(20, 201, len(data))
-
-        # Add the generated prices as the third column
-        data["Price(US Dollar)"] = random_prices
-
         st.subheader("Extracted Data:")
-        st.write(data)
+        st.table(df)
 
         # Display the download button
-        data = data.replace({r'\n': ' '}, regex=True)
-        csv_file = data.to_csv(sep=",", index=False,
-                               line_terminator='\n', encoding='utf-8')
+        csv_file = df.to_csv(sep=",", index=False,
+                             line_terminator='\n', encoding='utf-8')
         st.download_button("Download as CSV", csv_file,
-                           file_name="data.csv", mime="text/csv")
+                           file_name="ProductPriceList.csv", mime="text/csv")
     else:
         st.error(
             "Could not extract PRODUCT DESCRIPTION and BASIS OF DESIGN MANUFACTURER from the PDF.")

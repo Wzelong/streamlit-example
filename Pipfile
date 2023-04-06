@@ -8,6 +8,9 @@ streamlit = "*"
 pandas = "*"
 pypdf2 = "*"
 tabula-py = "*"
+pdfx = "*"
+google-search-results = "*"
+spacy = "*"
 
 [dev-packages]
 
