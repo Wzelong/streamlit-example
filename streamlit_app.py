@@ -21,7 +21,6 @@ def pdf(file):
 
     pdf = pdfx.PDFx(os.path.join(os.getcwd(), 'test.pdf'))
     text = pdf.get_text()
-    print(type(text))
 
     nlp = spacy.load("en_core_web_sm")
     text_block = text.split("\n\n")
@@ -39,11 +38,6 @@ def pdf(file):
                 legit = True
         if keep and legit:
             block_list.append(doc.text)
-
-    for i in range(len(block_list)):
-        print("item " + str(i+1) + ": ")
-        print(block_list[i])
-        print()
 
     search_list = []
     for i in block_list:
