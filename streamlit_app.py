@@ -5,7 +5,7 @@ import io
 import numpy as np
 
 st.set_page_config(layout="centered",
-                   page_title="RCV PDF Extractor", page_icon="📄")
+                   page_title="RCV PDF Demo", page_icon="📄")
 
 
 def pdf(file):
