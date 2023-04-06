@@ -1,5 +1,6 @@
+python==3.11
 streamlit
-pandas==1.3.5
+pandas
 tabula
 numpy
 serpapi
