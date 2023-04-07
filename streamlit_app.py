@@ -60,7 +60,7 @@ def pdf(file):
     return return_dict
 
 
-st.title("RCV PDF Extractor")
+st.title("RCV PDF Demo")
 
 uploaded_file = st.file_uploader("Upload a PDF file", type=['pdf'])
 
