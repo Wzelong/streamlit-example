@@ -4,6 +4,11 @@ import tabula
 import io
 import numpy as np
 import subprocess
+import os
+from serpapi import GoogleSearch
+import pandas as pd
+import spacy
+import pdfx
 
 st.set_page_config(layout="centered",
                    page_title="RCV PDF Demo", page_icon="📄")
@@ -11,6 +16,7 @@ st.set_page_config(layout="centered",
 
 @st.cache_resource
 def download_en_core_web_sm():
+    subprocess.run(["pip", "install", "-U", "spacy"])
     subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
 
 
@@ -19,11 +25,6 @@ nlp = spacy.load("en_core_web_sm")
 
 
 def pdf(file):
-    import os
-    from serpapi import GoogleSearch
-    import pandas as pd
-    import spacy
-    import pdfx
 
     word_list = ["led", "wall", "floor",
                  "sign", "pendant", "light", "steplight"]
